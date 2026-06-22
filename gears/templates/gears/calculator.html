@@ -130,8 +130,12 @@
                     <input type="number" name="module" step="0.5" min="0.1" value="2" required>
                 </div>
                 <div class="form-group">
-                    <label>Zähnezahl z</label>
+                    <label>Zähnezahl z₁ (Antrieb)</label>
                     <input type="number" name="tooth_count" min="6" value="20" required>
+                </div>
+                <div class="form-group">
+                    <label>Zähnezahl z₂ (Abtrieb, optional)</label>
+                    <input type="number" name="tooth_count_driven" min="6" placeholder="–">
                 </div>
                 <div class="form-group">
                     <label>Material</label>
@@ -146,19 +150,44 @@
         </form>
 
         {% if result %}
-        <div class="results">
-            <div class="result-card">
-                <div class="label">Teilkreisdurchmesser d</div>
-                <div class="value">{{ result.pitch_diameter }} mm</div>
+        <div style="margin-top: 20px;">
+            <div class="section-label">Zahnrad 1 (Antrieb)</div>
+            <div class="results">
+                <div class="result-card">
+                    <div class="label">Teilkreisdurchmesser d₁</div>
+                    <div class="value">{{ result.pitch_diameter }} mm</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Kopfkreisdurchmesser da₁</div>
+                    <div class="value">{{ result.addendum_diameter }} mm</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Fußkreisdurchmesser df₁</div>
+                    <div class="value">{{ result.root_diameter }} mm</div>
+                </div>
             </div>
-            <div class="result-card">
-                <div class="label">Kopfkreisdurchmesser da</div>
-                <div class="value">{{ result.addendum_diameter }} mm</div>
+
+            {% if result_gear.tooth_count_driven %}
+            {% with result_gear as g %}
+            <div class="section-label" style="margin-top: 16px;">Zahnrad 2 (Abtrieb)</div>
+            <div class="results">
+                <div class="result-card">
+                    <div class="label">Teilkreisdurchmesser d₂</div>
+                    <div class="value">{{ g.module|floatformat:1 }} × {{ g.tooth_count_driven }} mm</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Übersetzungsverhältnis i</div>
+                    <div class="value">{{ g.gear_ratio }}</div>
+                </div>
+                <div class="result-card">
+                    <div class="label">Typ</div>
+                    <div class="value" style="font-size: 14px;">
+                        {% if g.gear_ratio > 1 %}Untersetzung{% elif g.gear_ratio < 1 %}Übersetzung{% else %}Direktantrieb{% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="result-card">
-                <div class="label">Fußkreisdurchmesser df</div>
-                <div class="value">{{ result.root_diameter }} mm</div>
-            </div>
+            {% endwith %}
+            {% endif %}
         </div>
         {% endif %}
 
@@ -166,9 +195,10 @@
         <table>
             <tr>
                 <th>Modul</th>
-                <th>Zähnezahl</th>
+                <th>z₁</th>
+                <th>z₂</th>
+                <th>i</th>
                 <th>Material</th>
-                <th>Teilkreis (mm)</th>
                 <th>Erstellt</th>
                 <th></th>
             </tr>
@@ -176,8 +206,9 @@
             <tr>
                 <td>{{ gear.module }}</td>
                 <td>{{ gear.tooth_count }}</td>
+                <td>{{ gear.tooth_count_driven|default:"–" }}</td>
+                <td>{{ gear.gear_ratio|default:"–" }}</td>
                 <td>{{ gear.get_material_display }}</td>
-                <td>{{ gear.pitch_diameter }}</td>
                 <td>{{ gear.created_at|date:"d.m.Y H:i" }}</td>
                 <td>
                     <form method="post" action="{% url 'delete_gear' gear.id %}" style="margin: 0;">
